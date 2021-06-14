@@ -14,7 +14,7 @@ app.set('view engine', 'ejs');
 
 
 // database connection
-const dbURI = process.env.DB_CONNECT;
+const dbURI = process.env.LOCAL_DB;
 mongoose.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex:true })
   .then((result) => {
     app.listen(3000)

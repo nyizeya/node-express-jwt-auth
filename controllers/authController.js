@@ -1,4 +1,6 @@
-const User = require("../models/User")
+const User = require("../models/User");
+const bcrypt = require('bcrypt')
+const { registerValidation } = require("../validation");
 
 // handle errors
 const handleErrors = (err) => {
@@ -32,15 +34,32 @@ module.exports.login_get = (req, res) => {
 
 // Post SignUp
 module.exports.signup_post = async (req, res) => {
-    const { email, password} = req.body
-    
+    // validating user input data before trusting them
+    const { error } = registerValidation(req.body)
+
+    // check if there's an error
+    if (error) return res.status(400).json(error.details[0].message)
+
+    // check if email already existed in the db
+    const emailExist = await User.findOne({email: req.body.email})
+    if (emailExist) return res.status(400).send("Email Already Exist")
+
+    // hash the use password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(req.body.password, salt)
+
+    const user = new User({
+        email: req.body.email,
+        password: hashedPassword
+    })
+
     try {
-        const user = await User.create({ email, password})
-        res.status(201).json(user)
-    } catch(err) {
-        const errors = handleErrors(err)
-        res.status(400).json(errors)
+        const savedUser = await user.save()
+        res.status(201).json(savedUser)
+    } catch (err) {
+        res.status(400).json(err)
     }
+    // res.json(data)
 }
 
 
