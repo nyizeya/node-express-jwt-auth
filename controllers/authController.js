@@ -29,13 +29,20 @@ module.exports.signup_post = async (req, res) => {
     const { error } = registerValidation(req.body)
 
     // check if there's an error
-    if (error) return res.status(400).json(error.details[0].message)
+    if (error) return res.status(400).json({error: {
+            message: error.details[0].message,
+            path: error.details[0].path[0]
+        }
+    })
+    // if (error) return res.status(400).json({error: error.details[0].path[0]})
 
     // check if email already existed in the db
     const emailExist = await User.findOne({email: req.body.email})
-    if (emailExist) return res.status(400).send("Email Already Exist")
+    if (emailExist) return res.status(400).json({error: {
+        message: "Email Already Exist"
+    }})
 
-    // hash the use password
+    // hash the user password
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
@@ -47,13 +54,16 @@ module.exports.signup_post = async (req, res) => {
     try {
         const savedUser = await user.save()
         const token = createToken(user._id)
-        res.cookie('jwt', token, {
-            maxAge: maxAge * 1000,
-            httpOnly: true
-        })
+        // res.cookie('jwt', token, {
+        //     maxAge: maxAge * 1000,
+        //     httpOnly: true
+        // })
+        res.header('auth-token', token)
         res.status(201).json({user: savedUser._id})
     } catch (err) {
-        res.status(400).json(err)
+        res.status(400).json({error: {
+            message: err
+        }})
     }
     // res.json(data)
 }
