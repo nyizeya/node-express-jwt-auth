@@ -2,7 +2,7 @@ const User = require("../models/User");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 require('dotenv/config')
-const { registerValidation } = require("../validation");
+const { registerValidation, loginValidation } = require("../validation");
 
 const maxAge = 60 * 60 * 24 * 3
 
@@ -65,13 +65,26 @@ module.exports.signup_post = async (req, res) => {
             message: err
         }})
     }
-    // res.json(data)
 }
 
 
 // Post Login
-module.exports.login_post = (req, res) => {
-    const { email, password} = req.body
-    console.log(email, password);
-    res.send('login')
+module.exports.login_post = async (req, res) => {
+    const { error } = loginValidation(req.body)
+    if (error) return res.status(400).json({error: {
+        message: error.details[0].message,
+        path: error.details[0].path[0]
+    }}) 
+
+    const user = await User.findOne({ email: req.body.email })
+    if (!user) return res.status(400).json({ error: {
+        message: "Email Not Found"
+    }})
+
+    const validPass = await bcrypt.compare(req.body.password, user.password)
+    if (!validPass) return res.status(400).json({ error: {
+        message: "Incorrect Password"
+    }})
+
+    res.json({ user: user._id })
 }
