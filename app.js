@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes')
 const cookieParser = require('cookie-parser');
-const verify = require('./routes/verifyToken');
+const { verify, checkUser } = require('./routes/verifyToken');
 require('dotenv/config')
 
 const app = express();
@@ -26,6 +26,7 @@ mongoose.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true, useCr
   .catch((err) => console.log(err));
 
 // routes
+app.get('*', checkUser)
 app.get('/', (req, res) => res.render('home'));
 app.get('/smoothies', verify, (req, res) => res.render('smoothies'));
 app.use(authRoutes)
