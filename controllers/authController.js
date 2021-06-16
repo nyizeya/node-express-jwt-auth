@@ -53,12 +53,12 @@ module.exports.signup_post = async (req, res) => {
 
     try {
         const savedUser = await user.save()
-        const token = createToken(user._id)
+        // const token = createToken(user._id)
         // res.cookie('jwt', token, {
         //     maxAge: maxAge * 1000,
         //     httpOnly: true
         // })
-        res.header('auth-token', token)
+        // res.header('auth-token', token)
         res.status(201).json({user: savedUser._id})
     } catch (err) {
         res.status(400).json({error: {
@@ -86,5 +86,12 @@ module.exports.login_post = async (req, res) => {
         message: "Incorrect Password"
     }})
 
-    res.json({ user: user._id })
+    const token = createToken(user._id)
+    res.cookie('jwt', token, {httpOnly: true, maxAge: maxAge * 1000})
+    res.header('auth-token', token).json({user: user._id})
+}
+
+module.exports.logout_get = (req, res) => {
+    res.cookie('jwt', '', {maxAge: 1})
+    res.redirect('/')
 }
