@@ -1,25 +1,16 @@
 const User = require("../models/User");
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+require('dotenv/config')
 const { registerValidation } = require("../validation");
 
-// handle errors
-const handleErrors = (err) => {
-    console.log(err.message, err.code);
-    let errors = { email: '', password: ''}
+const maxAge = 60 * 60 * 24 * 3
 
-    // duplicate error code 
-    if (err.code === 11000) {
-        errors.email = 'that email is already registered'
-        return errors
-    }
-
-    // validation errors
-    if (err.message.includes('User validation failed')) {
-        Object.values(err.errors).forEach(({properties}) => {
-            errors[properties.path] = properties.message
-        })
-    }
-    return errors
+// create json token
+const createToken = (id) => {
+    return jwt.sign({_id: id}, process.env.TOKEN_SECRET, {
+        expiresIn: maxAge
+    })
 }
 
 // Get SignUp
@@ -55,7 +46,12 @@ module.exports.signup_post = async (req, res) => {
 
     try {
         const savedUser = await user.save()
-        res.status(201).json(savedUser)
+        const token = createToken(user._id)
+        res.cookie('jwt', token, {
+            maxAge: maxAge * 1000,
+            httpOnly: true
+        })
+        res.status(201).json({user: savedUser._id})
     } catch (err) {
         res.status(400).json(err)
     }
